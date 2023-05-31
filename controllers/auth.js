@@ -1,9 +1,9 @@
 
+const { configBD } = require('../database/config');
+const { generarJWT } = require('../helpers/jwt');
 const { response, request } = require("express");
 const bcryptjs = require('bcryptjs');
-const { generarJWT } = require('../helpers/jwt');
 const sql = require('mssql');
-const { configBD } = require('../database/config');
 
 const login = async (req = request, res = response) => {
 
@@ -54,6 +54,35 @@ const login = async (req = request, res = response) => {
   }
 }
 
+const newUser = async(req = request, res = response) => {
+  const { name, email, password } = req.body;
+ 
+  try {
+
+
+
+    const pool = await sql.connect(configBD);
+    const resul = await pool.request()
+      .input('u_name', sql.VarChar, name)
+      .input('u_email', sql.VarChar, email)
+      .input('u_password', sql.VarChar, password)
+      .query('INSERT INTO [dbo].[users]( [u_name] ,[u_email], [u_password] ) VALUES ( @u_name, @u_email, @u_password )');
+
+
+    res.status(200).json({
+      ok:true,
+      msg:'user successfully entered'
+    });
+
+  } catch (error) {
+    res.status(401).json({
+      ok: false,
+      msg: 'Error al procesar el ingreso del nuevo usuario.',
+      msgSystem: error.originalError.info.message
+    });
+  }
+
+}
 
 const renewToken = async (req, res = response) => {
 
@@ -81,42 +110,42 @@ const renewToken = async (req, res = response) => {
 };
 
 
-const getEmpresas = async(req, res = response) => {
+const getEmpresas = async (req, res = response) => {
 
 
   try {
 
-    const  pool = await  sql.connect(configBD);    
-    const  empresas = await  pool.request().query('select * from swe.SWTEMP_EMPRESA');
+    const pool = await sql.connect(configBD);
+    const empresas = await pool.request().query('select * from swe.SWTEMP_EMPRESA');
     const { recordsets } = empresas;
-    
+
     res.status(200).json({
-      ok:true,
+      ok: true,
       empresas: recordsets
     });
 
-/*
-    sql.connect(configBD, (err) => {
-
-      if (err) {
-        console.log('ssss: ' + err);
-      }
-      const sqlreq = new sql.Request();
-      sqlreq.query(
-
-
-        'select * from swe.SWTEMP_EMPRESA'
-
-        , (err, recordset) => {
+    /*
+        sql.connect(configBD, (err) => {
+    
           if (err) {
-            console.log('saaasqqll: ' + err);
+            console.log('ssss: ' + err);
           }
-          console.log(recordset);
-          res.send(recordset);
-
-        })
-
-    });*/
+          const sqlreq = new sql.Request();
+          sqlreq.query(
+    
+    
+            'select * from swe.SWTEMP_EMPRESA'
+    
+            , (err, recordset) => {
+              if (err) {
+                console.log('saaasqqll: ' + err);
+              }
+              console.log(recordset);
+              res.send(recordset);
+    
+            })
+    
+        });*/
 
   } catch (error) {
     console.log('Error de ejecución:  ' + error);
@@ -129,4 +158,4 @@ const getEmpresas = async(req, res = response) => {
 
 };
 
-module.exports = { login, renewToken, getEmpresas };
+module.exports = { login, newUser, renewToken, getEmpresas };
